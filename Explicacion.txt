@@ -1,46 +1,147 @@
-# Estructura y lógica de los Ejercicios 1, 2 y 3
+EXPLICACION DE LOS EJERCICIOS 1, 2 Y 3 - UNIDAD 5
 
-## Ejercicio 1 – Listado Básico con Fetch (HTML + JS)
-**index.html**
-  * **head** – Define el título y el estilo básico (tabla + loader).
-  * **body** – Tiene un botón *Recargar* y una tabla vacía (`tbody#tabla`).
-  * **script** – 
-    * `cargar()` hace una llamada `fetch('/api/estudiantes.php')`, convierte la respuesta a JSON y construye las filas de la tabla.\
-    * El botón *Recargar* llama a `cargar()`.
+Idea general
+------------
+Los tres ejercicios muestran datos en una página web, pero no usan todos la
+misma fuente ni se conectan entre sí como una cadena:
 
-No hay formularios de envío ni edición; el ejercicio solo muestra la lectura.
----
+  Navegador (HTML y JavaScript) -> fuente de datos o API -> respuesta JSON
 
-## Ejercicio 2 – CRUD sin PHP + API PHP
-**api/estudiante.php**
-  * **CORS y OPTIONS** (importante – evita problemas de origen cruzado).\
-  * Configura PDO SQLite y crea la tabla si no existe.\
-  * `fetchAll()` devuelve todos o una búsqueda (`q`).\
-  * Cada método HTTP (`GET`, `POST`, `DELETE`, `PUT`) valida, ejecuta y devuelve `JSON` con códigos HTTP adecuados.
+En el ejercicio 1, la fuente es un servicio externo. En los ejercicios 2 y 3,
+la página usa JavaScript para comunicarse con una API PHP, que a su vez lee o
+modifica una base de datos SQLite. El ejercicio 3 reutiliza el JavaScript del
+ejercicio 2.
 
-**index.html** – (mismo layout que el Ejercicio 1)\
-  * Añade un *formulario* de creación y un *modal* de edición.\
-  * Al enviar el formulario o el modal, se envía una petición `POST` o `PUT` respectivamente.\
-  * Los botones *Eliminar* y *Editar* disparan `DELETE` y `PUT`.\
-  * Se muestra un mensaje de feedback en `#mensaje`.
+EJERCICIO 1 - Consulta de usuarios a una API externa
+---------------------------------------------------
 
-**app.js** – Contiene la lógica del cliente (fetch, manejo de eventos, actualización DOM).\
-  * Utiliza `async/await` para claridad.\
-  * Cada operación comprueba `resp.ok` y actualiza la UI sin recargar.
----
+Archivos y funciones:
 
-## Ejercicio 3 – Versión de “Ejercicio 2” con enlace externo
-**Ejercicio_3/index.html** – Copia de *Ejercicio_2* pero con la etiqueta `<script src="../Ejercicio_2/app.js" defer>`\
-  * Se separan los archivos por carpeta para demostrar que la lógica puede compartirse.
+  index.html
+    Crea la página, el botón "Recargar", el indicador de carga y la tabla.
+    El elemento <tbody id="tablaUsuarios"> es el espacio donde JavaScript
+    agrega las filas.
 
-La estructura es idéntica a la de Ejercicio 2; la única diferencia es la ruta del `<script>`.
----
+  app.js
+    Busca esos elementos HTML por sus ID. La función cargarUsuarios() hace una
+    petición GET con fetch() a:
+      https://jsonplaceholder.typicode.com/users
+    Después verifica que la respuesta HTTP sea correcta, convierte el cuerpo
+    JSON con respuesta.json() y muestra el nombre, email y ciudad de cada
+    usuario. Si falla la petición, muestra un mensaje en la tabla; finally
+    oculta el indicador de carga. El botón "Recargar" vuelve a ejecutar la
+    función y la llamada al final del archivo la ejecuta al abrir la página.
 
-### Observaciones generales
-* **Importante**: Se usa PDO con *prepared statements* en PHP para evitar inyección SQL.\
-* En JavaScript, todas las funciones que realizan llamadas al servidor usan `try/catch`? – en este caso no; se asume éxito y se maneja `resp.ok`. Considerar agregar `try/catch` en producción.\
-* El modal evita el envío del formulario tradicional; se controla todo con JavaScript.
-* Los textos de feedback están en `#mensaje`, lo que permite una UX sencilla sin librerías.
-* Se permite la búsqueda en tiempo real gracias al evento `oninput`.
+Conexión completa:
+  index.html carga app.js -> app.js consulta JSONPlaceholder por Internet ->
+  el servicio responde con JSON -> app.js dibuja los usuarios en la tabla.
 
-Con estos archivos y comentarios, la entrega del ejercicio 1‑3 queda completa, documentada y funcional."
+Este ejercicio solo consulta y muestra datos. No usa el PHP ni la base SQLite
+de los ejercicios 2 y 3; los usuarios vienen del servicio externo y no se
+guardan en este proyecto.
+
+EJERCICIO 2 - CRUD de estudiantes con JavaScript, PHP y SQLite
+-------------------------------------------------------------
+
+Archivos y funciones:
+
+  index.html
+    Define los elementos que controla JavaScript: la búsqueda, el botón para
+    recargar, la tabla (id="tabla"), el formulario para agregar, el modal para
+    editar y el área de mensajes. Carga app.js mediante <script src="app.js"
+    defer>.
+
+  app.js
+    Es la parte del navegador. Busca los elementos del HTML, escucha sus
+    eventos y se comunica con el servidor usando fetch().
+
+    - cargar(q): solicita la lista; si q tiene texto, pide que se filtre.
+      Convierte la respuesta JSON en filas de la tabla y agrega botones para
+      editar y eliminar.
+    - El botón "Recargar" llama a cargar() sin filtro.
+    - Al escribir en la búsqueda, vuelve a llamar a cargar() con el texto.
+    - Al enviar el formulario, evita el envío tradicional y manda los datos
+      como JSON con POST para crear un estudiante.
+    - Al pulsar "Eliminar", manda el id con DELETE.
+    - Al pulsar "Editar", copia los datos actuales al modal.
+    - "Guardar" manda el id y los nuevos datos con PUT; "Cancelar" cierra el
+      modal.
+    - Tras una operación correcta, actualiza la tabla y muestra un mensaje.
+
+  api/estudiante.php
+    Es la parte del servidor. Recibe las peticiones HTTP, abre SQLite con PDO
+    y se asegura de que exista la tabla estudiantes (id, nombre, email,
+    ciudad). Según el método:
+
+      GET     Lee todos los estudiantes; con el parámetro q busca por nombre
+              o email.
+      POST    Valida los datos y crea un estudiante.
+      PUT     Valida los datos y actualiza el estudiante indicado por id.
+      DELETE  Elimina el estudiante indicado por id.
+      OPTIONS Responde a la petición previa que puede enviar el navegador
+              antes de una petición entre distintos orígenes.
+
+    Devuelve los resultados o errores en JSON. PDO y las consultas preparadas
+    permiten pasar los valores como parámetros en las operaciones SQL.
+
+  data/initialize.php
+    Crea la tabla estudiantes en una base SQLite cuando se ejecuta. No lo
+    llama automáticamente app.js: es un inicializador independiente.
+
+Conexión prevista:
+  index.html -> app.js -> petición HTTP/JSON -> estudiante.php -> SQLite.
+  La respuesta vuelve por el mismo camino: PHP -> JSON -> app.js -> tabla o
+  mensaje en la página.
+
+EJERCICIO 3 - Otra página que reutiliza el JavaScript del ejercicio 2
+---------------------------------------------------------------------
+
+  index.html
+    Presenta una página de estudiantes con los mismos ID que espera el
+    JavaScript compartido: tabla, búsqueda, formulario, modal y mensajes.
+    En vez de tener su propio app.js, carga:
+      ../Ejercicio_2/app.js
+
+  app.js compartido
+    Es exactamente el archivo JavaScript del ejercicio 2. Por eso los botones,
+    la búsqueda, el alta, la edición y la eliminación se comportan igual, y
+    las peticiones van a la misma API configurada allí.
+
+Conexión prevista:
+  Ejercicio_3/index.html -> Ejercicio_2/app.js -> API PHP -> SQLite.
+  El HTML está en otra carpeta, pero eso no cambia el código JavaScript
+  compartido ni convierte este ejercicio en otra API.
+
+DIFERENCIAS Y RUTAS A TENER EN CUENTA EN ESTA COPIA DEL PROYECTO
+---------------------------------------------------------------
+
+Hay rutas que no coinciden en los archivos actuales, por lo que la conexión
+prevista de los ejercicios 2 y 3 puede fallar si no existe otra configuración
+del servidor:
+
+  1. app.js pide /api/estudiantes.php (plural) desde la raíz del servidor.
+     El PHP que aparece en este proyecto se llama
+     Ejercicio_2/api/estudiante.php (singular).
+
+  2. El HTML de los ejercicios 2 y 3 carga el mismo app.js, así que ambos
+     heredan esa ruta de API. Para que funcione, la URL solicitada debe apuntar
+     a un PHP accesible y la ruta debe coincidir con su ubicación real.
+
+  3. estudiante.php abre la base en Ejercicio_2/data/estudiantes.db, porque
+     construye la ruta desde su propia carpeta. En cambio,
+     data/initialize.php crea data/estudiantes.db en la raíz del proyecto.
+     Por tanto, son ubicaciones distintas; inicializar una no inicializa
+     automáticamente la otra.
+
+Además, las rutas que comienzan con / se resuelven desde la raíz del servidor
+web. Si el proyecto está publicado dentro de una subcarpeta, la URL puede no
+ser la esperada y debe ajustarse a esa instalación.
+
+RESUMEN
+-------
+  Ejercicio 1: HTML + JavaScript -> API pública -> lectura y visualización.
+  Ejercicio 2: HTML + JavaScript -> API PHP -> SQLite; permite CRUD.
+  Ejercicio 3: HTML propio -> JavaScript compartido del ejercicio 2 -> la
+               misma API y base de datos previstas.
+
+CRUD significa crear (POST), leer (GET), actualizar (PUT) y eliminar (DELETE).
