@@ -1,20 +1,45 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="es">
 <head>
-
-    <meta charset="UFT-8">
-    <title>Sitema Estudiante</title>
-
+<meta charset="UTF-8">
+<title>Listado de Estudiantes</title>
+<style>
+  table{border-collapse:collapse;width:100%;}
+  th,td{border:1px solid #ccc;padding:5px;}
+  #loading{display:none;}
+</style>
 </head>
 <body>
+<h1>Listado de Estudiantes</h1>
+<input type="text" id="busqueda" placeholder="buscar estudiante">
+<button id="recargar">Recargar</button>
+<p id="loading">Cargando...</p>
+<table>
+  <thead><tr><th>Nombre</th><th>Email</th><th>Ciudad</th><th>Acciones</th></tr></thead>
+  <tbody id="tabla"></tbody>
+</table>
 
-<h1>Listado de Estudiantes<h1>
-<input
-    type = "text"
-    id="busqueda"
-    placeholder="buscar estudiante">
-    <hr>
-    
+<!-- Form for adding a new student -->
+<form id="form-nuevo" style="margin-top: 1em;">
+  <input type="text" id="nombre" placeholder="Nombre" required>
+  <input type="email" id="email" placeholder="Email" required>
+  <input type="text" id="ciudad" placeholder="Ciudad" required>
+  <button type="submit">Agregar</button>
+</form>
+
+<!-- Modal for editing -->
+<div id="modal" style="display:none; position:fixed; top:20%; left:30%; background:#fff; padding:1em; border:1px solid #000;">
+  <h3>Editar Estudiante</h3>
+  <input type="hidden" id="edit-id">
+  <label>Nombre: <input type="text" id="edit-nombre" required></label><br>
+  <label>Email: <input type="email" id="edit-email" required></label><br>
+  <label>Ciudad: <input type="text" id="edit-ciudad" required></label><br>
+  <button id="edit-save">Guardar</button>
+  <button id="edit-cancel">Cancelar</button>
+</div>
+
+<div id="mensaje" style="margin-top:1em;"></div>
+
+<script src="app.js" defer></script>
 </body>
 </html>

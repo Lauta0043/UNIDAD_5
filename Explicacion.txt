@@ -1,0 +1,46 @@
+# Estructura y lógica de los Ejercicios 1, 2 y 3
+
+## Ejercicio 1 – Listado Básico con Fetch (HTML + JS)
+**index.html**
+  * **head** – Define el título y el estilo básico (tabla + loader).
+  * **body** – Tiene un botón *Recargar* y una tabla vacía (`tbody#tabla`).
+  * **script** – 
+    * `cargar()` hace una llamada `fetch('/api/estudiantes.php')`, convierte la respuesta a JSON y construye las filas de la tabla.\
+    * El botón *Recargar* llama a `cargar()`.
+
+No hay formularios de envío ni edición; el ejercicio solo muestra la lectura.
+---
+
+## Ejercicio 2 – CRUD sin PHP + API PHP
+**api/estudiante.php**
+  * **CORS y OPTIONS** (importante – evita problemas de origen cruzado).\
+  * Configura PDO SQLite y crea la tabla si no existe.\
+  * `fetchAll()` devuelve todos o una búsqueda (`q`).\
+  * Cada método HTTP (`GET`, `POST`, `DELETE`, `PUT`) valida, ejecuta y devuelve `JSON` con códigos HTTP adecuados.
+
+**index.html** – (mismo layout que el Ejercicio 1)\
+  * Añade un *formulario* de creación y un *modal* de edición.\
+  * Al enviar el formulario o el modal, se envía una petición `POST` o `PUT` respectivamente.\
+  * Los botones *Eliminar* y *Editar* disparan `DELETE` y `PUT`.\
+  * Se muestra un mensaje de feedback en `#mensaje`.
+
+**app.js** – Contiene la lógica del cliente (fetch, manejo de eventos, actualización DOM).\
+  * Utiliza `async/await` para claridad.\
+  * Cada operación comprueba `resp.ok` y actualiza la UI sin recargar.
+---
+
+## Ejercicio 3 – Versión de “Ejercicio 2” con enlace externo
+**Ejercicio_3/index.html** – Copia de *Ejercicio_2* pero con la etiqueta `<script src="../Ejercicio_2/app.js" defer>`\
+  * Se separan los archivos por carpeta para demostrar que la lógica puede compartirse.
+
+La estructura es idéntica a la de Ejercicio 2; la única diferencia es la ruta del `<script>`.
+---
+
+### Observaciones generales
+* **Importante**: Se usa PDO con *prepared statements* en PHP para evitar inyección SQL.\
+* En JavaScript, todas las funciones que realizan llamadas al servidor usan `try/catch`? – en este caso no; se asume éxito y se maneja `resp.ok`. Considerar agregar `try/catch` en producción.\
+* El modal evita el envío del formulario tradicional; se controla todo con JavaScript.
+* Los textos de feedback están en `#mensaje`, lo que permite una UX sencilla sin librerías.
+* Se permite la búsqueda en tiempo real gracias al evento `oninput`.
+
+Con estos archivos y comentarios, la entrega del ejercicio 1‑3 queda completa, documentada y funcional."
