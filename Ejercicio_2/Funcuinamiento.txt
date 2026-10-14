@@ -1,0 +1,404 @@
+Funcionamiento del Ejercicio 2 (versión local)
+
+Este ejercicio es una pequeña aplicación web hecha con HTML, CSS y JavaScript que permite:
+- agregar estudiantes
+- eliminar estudiantes
+- editar estudiantes
+- mostrar una tabla con los datos
+- filtrar por nombre o email (aunque no está activado desde un input visible, sí está preparado en el código)
+
+Todo ocurre en el navegador, sin usar una base de datos ni un servidor backend. Los datos se guardan en un arreglo JavaScript llamado estudiantes, que se modifica en memoria mientras la página está abierta.
+
+1. Estructura general de la página
+
+La página empieza con un documento HTML normal:
+- <!DOCTYPE html>
+- <html>
+- <head>
+- <body>
+
+Dentro del <head> se define:
+- el idioma de la página (es)
+- el título de la pestaña
+- un estilo CSS mínimo para la tabla y el modal de edición
+
+Dentro del <body> se encuentran los elementos principales:
+
+- Un título principal: "Prueba de Formularios - Ejercicio 2 (Versión Local)"
+- Un texto de carga con id="loading" que existe pero no se usa de forma visible en la práctica.
+
+Formulario para agregar:
+- tiene id="form-nuevo"
+- contiene 3 inputs:
+  - nombre
+  - email
+  - ciudad
+- tiene un botón "Agregar"
+
+Modal para editar:
+- un div con id="modal"
+- tiene campos ocultos y visibles:
+  - id oculto
+  - nombre
+  - email
+  - ciudad
+- botones: Guardar y Cancelar
+
+Un mensaje informativo:
+- <div id="mensaje"> </div>
+- sirve para mostrar mensajes como "Estudiante agregado exitosamente" o "Estudiante eliminado"
+
+Y finalmente la tabla:
+- <table>
+- <thead> con los títulos: Nombre, Email, Ciudad, Acciones
+- <tbody id="tabla"> donde se dibujan las filas de estudiantes
+
+2. Las variables clave del JavaScript
+
+Al inicio del script se obtienen los elementos del DOM con document.getElementById(...):
+
+- tabla: la tabla donde se muestran los estudiantes
+- loading: el mensaje de carga
+- formNuevo: el formulario de alta
+- mensaje: el contenedor de mensajes
+- modal: el cuadro de edición
+- editId, editNombre, editEmail, editCiudad: inputs del modal
+
+Luego se declara este arreglo:
+
+let estudiantes = [
+  {id: 1, nombre: 'Juan Pérez', email: 'juan@email.com', ciudad: 'Madrid'},
+  {id: 2, nombre: 'María García', email: 'maria@email.com', ciudad: 'Barcelona'},
+  {id: 3, nombre: 'Carlos López', email: 'carlos@email.com', ciudad: 'Valencia'}
+];
+
+Esto representa la base de datos inicial del ejercicio. Son 3 estudiantes precargados que aparecen en la tabla cuando se abre la página.
+
+3. La función cargar()
+
+La función principal es esta:
+
+function cargar(q='') {
+  setTimeout(() => {
+    let data = estudiantes;
+
+    if (q) {
+      data = data.filter(e => 
+        e.nombre.toLowerCase().includes(q.toLowerCase()) || 
+        e.email.toLowerCase().includes(q.toLowerCase())
+      );
+    }
+
+    tabla.innerHTML='';
+    data.forEach(e=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${e.nombre}</td><td>${e.email}</td><td>${e.ciudad}</td>
+        <td>
+          <button class="eliminar" data-id="${e.id}">Eliminar</button>
+          <button class="editar" data-id="${e.id}" data-nombre="${e.nombre}" data-email="${e.email}" data-ciudad="${e.ciudad}">Editar</button>
+        </td>`;
+      tabla.appendChild(tr);
+    });
+  }, 300);
+}
+
+Esta función hace varios pasos importantes:
+
+- setTimeout(() => { ... }, 300)
+  Simula una demora de 300 milisegundos como si estuviera cargando datos desde un servidor.
+  Es una forma simple de hacer que la carga se vea "más real".
+
+- let data = estudiantes;
+  Toma el arreglo principal.
+
+- if (q)
+  Si se recibió una consulta de búsqueda (parámetro q), filtra los estudiantes por:
+  - nombre
+  - email
+  La búsqueda es insensible a mayúsculas/minúsculas usando toLowerCase().
+
+- tabla.innerHTML = '';
+  Limpia el contenido actual de la tabla antes de volver a dibujarla.
+
+- data.forEach(e => { ... })
+  Recorre cada estudiante y crea una fila (tr) en la tabla.
+
+- tr.innerHTML = ...
+  Genera el contenido HTML de cada fila con:
+  - nombre
+  - email
+  - ciudad
+  - dos botones: Eliminar y Editar
+
+- cada botón recibe atributos data-id, data-nombre, data-email, data-ciudad
+  Esto es clave porque luego el código puede saber qué estudiante se tocó.
+
+- tabla.appendChild(tr)
+  Agrega la fila al tbody.
+
+4. ¿Qué ocurre al cargar la página?
+
+Al final del script viene esta línea:
+
+cargar();
+
+Esto ejecuta la función inmediatamente al abrir la página y muestra los estudiantes iniciales en la tabla.
+
+Sin esa línea, la tabla aparecería vacía.
+
+5. Cómo funciona el formulario de agregar
+
+El siguiente bloque escucha el evento submit del formulario:
+
+formNuevo.addEventListener('submit', async e => {
+  e.preventDefault();
+  const data={nombre: formNuevo.nombre.value, email: formNuevo.email.value, ciudad: formNuevo.ciudad.value};
+
+  estudiantes.push({id: estudiantes.length + 1, ...data});
+
+  cargar();
+  mensaje.textContent='Estudiante agregado exitosamente';
+});
+
+Explícitamente ocurre esto:
+
+- e.preventDefault();
+  Evita que el formulario recargue la página por defecto.
+
+- const data = { nombre: ..., email: ..., ciudad: ... }
+  Toma los valores escritos en los inputs del formulario.
+
+- estudiantes.push({id: estudiantes.length + 1, ...data})
+  Agrega el nuevo estudiante al arreglo.
+  El id se genera como longitud actual + 1, así que si hay 3 estudiantes, el siguiente será 4.
+
+- cargar();
+  Vuelve a dibujar la tabla con el nuevo arreglo.
+
+- mensaje.textContent = 'Estudiante agregado exitosamente';
+  Muestra un mensaje visible al usuario.
+
+Importante: los inputs tienen required, así que el navegador no deja enviar si falta algún dato.
+
+6. Cómo funciona la eliminación
+
+La eliminación se maneja usando una delegación de eventos sobre la tabla:
+
+tabla.addEventListener('click', async e => {
+  if(e.target.classList.contains('eliminar')){
+    const id = e.target.dataset.id;
+
+    estudiantes = estudiantes.filter(e => e.id != id);
+
+    cargar();
+    mensaje.textContent='Estudiante eliminado';
+  }
+
+  if(e.target.classList.contains('editar')){
+    const id = e.target.dataset.id;
+    const nombre = e.target.dataset.nombre;
+    const email = e.target.dataset.email;
+    const ciudad = e.target.dataset.ciudad;
+
+    editId.value = id;
+    editNombre.value = nombre;
+    editEmail.value = email;
+    editCiudad.value = ciudad;
+    modal.style.display = 'block';
+  }
+});
+
+Este bloque es muy importante porque la tabla se renueva cada vez.
+
+Qué hace:
+
+- escucha el click sobre la tabla completa
+- revisa si el botón clickeado tiene la clase eliminar
+- si sí, toma el id del botón usando dataset.id
+- elimina ese estudiante con filter
+- vuelve a cargar la tabla
+- muestra el mensaje "Estudiante eliminado"
+
+La línea:
+
+estudiantes = estudiantes.filter(e => e.id != id);
+
+significa:
+- recorre todos los estudiantes
+- conserva solo los que no tengan ese id
+- así se borra el seleccionado
+
+7. Cómo funciona la edición
+
+El mismo click sobre la tabla también detecta si se pulso el botón de editar:
+
+if(e.target.classList.contains('editar')){
+  const id = e.target.dataset.id;
+  const nombre = e.target.dataset.nombre;
+  const email = e.target.dataset.email;
+  const ciudad = e.target.dataset.ciudad;
+
+  editId.value = id;
+  editNombre.value = nombre;
+  editEmail.value = email;
+  editCiudad.value = ciudad;
+  modal.style.display = 'block';
+}
+
+Esto significa:
+
+- toma los valores del estudiante seleccionado
+- los coloca en los inputs del modal
+- muestra el modal con display = 'block'
+
+El modal es un contenedor oculto inicialmente:
+
+<div id="modal" style="display:none; position:fixed; top:20%; left:30%; background:#fff; padding:1em; border:1px solid #000;">
+
+El estilo display:none hace que no se vea al principio. Cuando se hace clic en editar, el código lo muestra.
+
+8. Cancelar la edición
+
+Hay un botón para cancelar:
+
+document.getElementById('edit-cancel').addEventListener('click', () => {
+  modal.style.display = 'none';
+});
+
+Esto simplemente oculta el modal. No modifica los datos.
+
+9. Guardar la edición
+
+Cuando se pulsa "Guardar" en el modal, se ejecuta:
+
+document.getElementById('edit-save').addEventListener('click', async () => {
+  const data={id: editId.value, nombre: editNombre.value, email: editEmail.value, ciudad: editCiudad.value};
+
+  const index = estudiantes.findIndex(e => e.id == data.id);
+  if (index !== -1) {
+    estudiantes[index] = data;
+  }
+
+  modal.style.display='none';
+  cargar();
+  mensaje.textContent='Estudiante actualizado';
+});
+
+Qué hace:
+
+- toma el id del estudiante que se está editando
+- toma los nuevos valores desde los inputs del modal
+- busca la posición del estudiante dentro del arreglo con findIndex
+- si existe, reemplaza ese elemento por el nuevo data
+- oculta el modal
+- vuelve a dibujar la tabla
+- muestra el mensaje "Estudiante actualizado"
+
+La línea clave es:
+
+const index = estudiantes.findIndex(e => e.id == data.id);
+
+Esto busca en qué posición del arreglo está el estudiante a editar. El resultado puede ser:
+- -1 si no existe
+- un número mayor o igual a 0 si sí existe
+
+10. Cómo funciona el filtro de búsqueda
+
+Dentro de la función cargar(q = '') existe esta parte:
+
+if (q) {
+  data = data.filter(e => 
+    e.nombre.toLowerCase().includes(q.toLowerCase()) || 
+    e.email.toLowerCase().includes(q.toLowerCase())
+  );
+}
+
+Esto permite buscar estudiantes por nombre o email.
+
+Ejemplo:
+- si q = "juan", se buscan elementos cuyo nombre o email contengan "juan"
+- toLowerCase() hace que la búsqueda sea case-insensitive
+
+Sin embargo, en este archivo no hay un input visible para poner texto de búsqueda. Está implementado, pero no se usa en la interfaz visible. Solo queda preparado para cuando se quiera activar.
+
+11. Qué hace el recargar si existe
+
+Se agrega este bloque:
+
+const recargar = document.getElementById('recargar');
+if (recargar) {
+  recargar.onclick = () => cargar();
+}
+
+Esto busca si existe un elemento con id="recargar" en la página. Si sí existe, al hacer clic en ese botón se vuelve a llamar a cargar().
+
+En este ejemplo no hay ese botón visible, por lo tanto este bloque no tiene efecto práctico, pero está preparado para futuro uso.
+
+12. Cómo se muestra la información en pantalla
+
+La tabla está vacía al inicio, y luego se llena dinámicamente con JavaScript:
+
+- se crea una fila por cada estudiante
+- el contenido se genera con template strings
+- cada fila contiene nombre, email, ciudad y botones de acción
+
+Esto se hace con DOM dinámico, no con HTML estático fijo.
+
+13. Cómo funciona todo el flujo completo desde que se abre la página
+
+Paso a paso:
+
+1. El navegador carga el archivo HTML.
+2. Lee el código CSS y lo aplica.
+3. Crea todos los elementos del DOM: formulario, modal, tabla, etc.
+4. Ejecuta el bloque <script>.
+5. Selecciona los elementos importantes con document.getElementById.
+6. Define el arreglo estudiantes con 3 usuarios iniciales.
+7. Llama a cargar();
+8. cargar() espera 300 ms con setTimeout.
+9. Toma el arreglo estudiantes y dibuja todas las filas en la tabla.
+10. El usuario puede:
+   - agregar un estudiante
+   - editar un estudiante
+   - eliminar un estudiante
+11. Cada acción modifica el arreglo estudiantes.
+12. Luego se llama a cargar() para volver a dibujar la tabla con los datos nuevos.
+13. El mensaje cambia para indicar la acción realizada.
+
+14. ¿Qué hace que el ejercicio “funcione” realmente?
+
+El ejercicio funciona porque:
+
+- el HTML crea la estructura visual
+- el CSS da formato a la tabla y al modal
+- el JavaScript conecta los eventos del navegador con los datos
+- el arreglo estudiantes es el almacenamiento temporal en memoria
+- los listeners de eventos responden a clics y envíos del formulario
+- innerHTML y createElement permiten pintar la tabla con datos actualizados
+- los dataset permiten transportar información del botón al código
+- la lógica de reemplazo, filtrado y búsqueda actualiza la vista automáticamente
+
+15. Ventaja y limitación del ejercicio
+
+Ventaja:
+- es muy claro para entender cómo funcionan formularios, eventos, tablas y manipulación de datos en JavaScript
+
+Limitación:
+- los datos desaparecen cuando se recarga la página
+- no hay base de datos real
+- no hay backend ni persistencia
+
+En resumen, este ejercicio simula un CRUD básico (Crear, Leer, Actualizar, Eliminar) directamente desde JavaScript en el cliente, sin guardar la información de forma permanente.
+
+16. Resumen breve
+
+El ejercicio 2 funciona así:
+- hay una lista inicial de estudiantes
+- la tabla se dibuja con esos datos
+- el usuario llena el formulario y agrega un estudiante
+- cada fila tiene botones de editar y eliminar
+- el modal sirve para actualizar datos del estudiante seleccionado
+- al final, se vuelve a renderizar la tabla
+- todo sucede en el navegador con JavaScript, sin servidor ni base de datos
+
+Esto hace que sea ideal para aprender las bases de manejo de formularios y manipulación del DOM en JavaScript.

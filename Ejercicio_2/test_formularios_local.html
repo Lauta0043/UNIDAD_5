@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prueba Formularios - Ejercicio 2</title>
+<style>
+  table{border-collapse:collapse;width:100%;}
+  th,td{border:1px solid #ccc;padding:5px;}
+  #loading{display:none;}
+</style>
+</head>
+<body>
+<h1>Prueba de Formularios - Ejercicio 2 (Versión Local)</h1>
+<p id="loading" style="display: none;">Cargando...</p>
+
+<!-- Formulario de agregar -->
+<form id="form-nuevo" style="margin-top: 1em;">
+  <input type="text" id="nombre" placeholder="Nombre" required>
+  <input type="email" id="email" placeholder="Email" required>
+  <input type="text" id="ciudad" placeholder="Ciudad" required>
+  <button type="submit">Agregar</button>
+</form>
+
+<!-- Modal de edición -->
+<div id="modal" style="display:none; position:fixed; top:20%; left:30%; background:#fff; padding:1em; border:1px solid #000;">
+  <h3>Editar Estudiante</h3>
+  <input type="hidden" id="edit-id">
+  <label>Nombre: <input type="text" id="edit-nombre" required></label><br>
+  <label>Email: <input type="email" id="edit-email" required></label><br>
+  <label>Ciudad: <input type="text" id="edit-ciudad" required></label><br>
+  <button id="edit-save">Guardar</button>
+  <button id="edit-cancel">Cancelar</button>
+</div>
+
+<div id="mensaje" style="margin-top:1em;"></div>
+
+<!-- Tabla -->
+<table>
+  <thead><tr><th>Nombre</th><th>Email</th><th>Ciudad</th><th>Acciones</th></tr></thead>
+  <tbody id="tabla"></tbody>
+</table>
+
+<script>
+const tabla=document.getElementById('tabla');
+const loading=document.getElementById('loading');
+const formNuevo=document.getElementById('form-nuevo');
+const mensaje=document.getElementById('mensaje');
+const modal=document.getElementById('modal');
+const editId=document.getElementById('edit-id');
+const editNombre=document.getElementById('edit-nombre');
+const editEmail=document.getElementById('edit-email');
+const editCiudad=document.getElementById('edit-ciudad');
+
+// Datos iniciales de prueba
+let estudiantes = [
+  {id: 1, nombre: 'Juan Pérez', email: 'juan@email.com', ciudad: 'Madrid'},
+  {id: 2, nombre: 'María García', email: 'maria@email.com', ciudad: 'Barcelona'},
+  {id: 3, nombre: 'Carlos López', email: 'carlos@email.com', ciudad: 'Valencia'}
+];
+
+// Cargar datos iniciales (simulados)
+function cargar(q=''){
+  // Simular carga con timeout
+  setTimeout(() => {
+    let data = estudiantes;
+    
+    if (q) {
+      data = data.filter(e => 
+        e.nombre.toLowerCase().includes(q.toLowerCase()) || 
+        e.email.toLowerCase().includes(q.toLowerCase())
+      );
+    }
+    
+    tabla.innerHTML='';
+    data.forEach(e=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${e.nombre}</td><td>${e.email}</td><td>${e.ciudad}</td>
+        <td>
+          <button class="eliminar" data-id="${e.id}">Eliminar</button>
+          <button class="editar" data-id="${e.id}" data-nombre="${e.nombre}" data-email="${e.email}" data-ciudad="${e.ciudad}">Editar</button>
+        </td>`;
+      tabla.appendChild(tr);
+    });
+  }, 300);
+}
+
+// Botón recargar (si existe)
+const recargar = document.getElementById('recargar');
+if (recargar) {
+  recargar.onclick=()=>cargar();
+}
+
+formNuevo.addEventListener('submit', async e=>{
+  e.preventDefault();
+  const data={nombre: formNuevo.nombre.value, email: formNuevo.email.value, ciudad: formNuevo.ciudad.value};
+  
+  // Agregar nuevo estudiante
+  estudiantes.push({id: estudiantes.length + 1, ...data});
+  
+  cargar();
+  mensaje.textContent='Estudiante agregado exitosamente';
+});
+
+tabla.addEventListener('click',async e=>{
+  if(e.target.classList.contains('eliminar')){
+    const id=e.target.dataset.id;
+    
+    // Eliminar estudiante
+    estudiantes = estudiantes.filter(e => e.id != id);
+    
+    cargar();
+    mensaje.textContent='Estudiante eliminado';
+  }
+  
+  if(e.target.classList.contains('editar')){
+    const id=e.target.dataset.id;
+    const nombre=e.target.dataset.nombre;
+    const email=e.target.dataset.email;
+    const ciudad=e.target.dataset.ciudad;
+    editId.value=id;
+    editNombre.value=nombre;
+    editEmail.value=email;
+    editCiudad.value=ciudad;
+    modal.style.display='block';
+  }
+});
+
+document.getElementById('edit-cancel').addEventListener('click',()=>{
+  modal.style.display='none';
+});
+
+document.getElementById('edit-save').addEventListener('click', async ()=>{
+  const data={id: editId.value, nombre: editNombre.value, email: editEmail.value, ciudad: editCiudad.value};
+  
+  // Actualizar estudiante
+  const index = estudiantes.findIndex(e => e.id == data.id);
+  if (index !== -1) {
+    estudiantes[index] = data;
+  }
+  
+  modal.style.display='none';
+  cargar();
+  mensaje.textContent='Estudiante actualizado';
+});
+
+cargar();
+</script>
+</body>
+</html>
